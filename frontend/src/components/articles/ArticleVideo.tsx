@@ -149,19 +149,17 @@ function ArticleVideo({
           handleReportClick={handleReportClick}
           handleButtonClickWithoutLogin={handleButtonClickWithoutLogin}
         />
-        <AnimatePresence>
-          {isScrapModalOpen && (
-            <ScrapModal
-              articleId={articleInfo.article.id}
-              isOpen={isScrapModalOpen}
-              onRequestClose={() => setIsScrapModalOpen(false)}
-              onCreateModalOpen={() => {
-                setIsScrapModalOpen(false);
-                setIsCreateModalOpen(true);
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {isScrapModalOpen && (
+          <ScrapModal
+            articleId={articleInfo.article.id}
+            isOpen={isScrapModalOpen}
+            onRequestClose={() => setIsScrapModalOpen(false)}
+            onCreateModalOpen={() => {
+              setIsScrapModalOpen(false);
+              setIsCreateModalOpen(true);
+            }}
+          />
+        )}
         {isCreateModalOpen && (
           <CreateScrapModal
             isOpen={isCreateModalOpen}
