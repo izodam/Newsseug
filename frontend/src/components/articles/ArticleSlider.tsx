@@ -11,8 +11,8 @@ import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { RootState } from '../../redux/index';
 import { useLoadNextPage } from 'hooks/useLoadNextPage';
-import { ArticleVideo as ArticleVideoType } from 'types/api/articleVideo';
-import { fetchEachArticle } from 'apis/articleVideoApi';
+import { useArticleVideo, prefetchVideos } from 'hooks/useArticleVideo';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ArticleInfoType {
   id: number;
@@ -22,29 +22,10 @@ interface ArticleInfoType {
 function ArticleSlider() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const swiperRef = useRef<SwiperCore | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const [videoData, setVideoData] = useState<ArticleVideoType | null>(null);
 
   const handleSlideChange = (swiper: SwiperType) => {
     setActiveIndex(swiper.activeIndex);
   };
-
-  // useEffect(() => {
-  //   const setHeight = () => {
-  //     const containerElement = document.getElementById('container');
-  //     if (containerElement) {
-  //       containerElement.style.height = `${window.innerHeight}px`;
-  //     }
-  //   };
-
-  //   setHeight();
-  //   window.addEventListener('resize', setHeight);
-
-  //   return () => {
-  //     window.removeEventListener('resize', setHeight);
-  //   };
-  // }, []);
 
   useEffect(() => {
     if (swiperRef.current) {
@@ -64,17 +45,14 @@ function ArticleSlider() {
   const [activeIndex, setActiveIndex] = useState(slideIndex);
   const loadNextPage = useLoadNextPage();
 
+  const articleIds = articlesInfo.map((article: ArticleInfoType) => article.id);
+  const currentArticleId = articlesInfo[activeIndex]?.id;
+  const { data: videoData, isLoading } = useArticleVideo(currentArticleId);
+
+  const queryClient = useQueryClient();
   useEffect(() => {
-    setIsLoading(true);
-
-    const fetchVideos = async () => {
-      const video = await fetchEachArticle(articlesInfo[activeIndex].id);
-      setVideoData(video);
-      setIsLoading(false);
-    };
-
-    fetchVideos();
-  }, [activeIndex]);
+    prefetchVideos(queryClient, articleIds, activeIndex);
+  }, [activeIndex, articleIds]);
 
   return (
     <Container id="container">
@@ -104,22 +82,38 @@ function ArticleSlider() {
         }}
       >
         {articlesInfo.map((articleInfo: ArticleInfoType, index: number) => {
-          const startIndex = Math.max(activeIndex - 1);
-          const endIndex = Math.min(activeIndex + 1);
-          if (isLoading || !videoData) {
+          const articleId = articleInfo.id;
+
+          if (index === activeIndex) {
+            if (isLoading || !videoData) {
+              return (
+                <SwiperSlide
+                  key={`${articleId}-${index}`}
+                  data-history={articleInfo.id}
+                >
+                  <ModalOverlay>
+                    <Spinner height="100vh" />
+                  </ModalOverlay>
+                </SwiperSlide>
+              );
+            }
+
             return (
               <SwiperSlide
                 key={`${articleId}-${index}`}
                 data-history={articleInfo.id}
               >
-                <ModalOverlay>
-                  <Spinner height="100vh" />
-                </ModalOverlay>
+                <ArticleVideo
+                  articleInfo={videoData}
+                  thumbnailUrl={articleInfo.thumbnailUrl}
+                  setIsModalOpen={setIsModalOpen}
+                  isPlaying={index === activeIndex}
+                />
               </SwiperSlide>
             );
           }
 
-          if (index === startIndex || index === endIndex) {
+          if (index === activeIndex - 1 || index === activeIndex + 1) {
             return (
               <SwiperSlide
                 key={`${articleId}-${index}`}
@@ -132,27 +126,11 @@ function ArticleSlider() {
             );
           }
 
-          if (index !== activeIndex) {
-            return (
-              <SwiperSlide
-                key={`${articleId}-${index}`}
-                data-history={articleInfo.id}
-              />
-            );
-          }
-
           return (
             <SwiperSlide
               key={`${articleId}-${index}`}
               data-history={articleInfo.id}
-            >
-              <ArticleVideo
-                articleInfo={videoData}
-                thumbnailUrl={articleInfo.thumbnailUrl}
-                setIsModalOpen={setIsModalOpen}
-                isPlaying={index === activeIndex}
-              />
-            </SwiperSlide>
+            />
           );
         })}
       </Swiper>
