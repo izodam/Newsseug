@@ -11,8 +11,6 @@ import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { RootState } from '../../redux/index';
 import { useLoadNextPage } from 'hooks/useLoadNextPage';
-import { ArticleVideo as ArticleVideoType } from 'types/api/articleVideo';
-import { fetchEachArticle } from 'apis/articleVideoApi';
 import { useArticleVideo, prefetchVideos } from 'hooks/useArticleVideo';
 import { useQueryClient } from '@tanstack/react-query';
 
